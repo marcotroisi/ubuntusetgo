@@ -1,3 +1,5 @@
+mod toml_parser;
+
 use anyhow::{Context, Result};
 use clap::Parser;
 use console::{style, Emoji};
@@ -40,15 +42,34 @@ fn main() -> Result<()> {
 
     println!("\n");
     let pb = ProgressBar::new(content.lines().count() as u64);
-    for line in content.lines() {
-        if let Some(pattern) = &args.pattern {
-            let section = format!("[{}]", pattern);
-            if line.contains(&section) {
-                println!("{} {}", line, FOUND);
-            }
-        }
+    if let Some(pattern) = &args.pattern {
+        find_matches(&content, pattern, &mut std::io::stdout());
         pb.inc(1);
     }
     pb.finish();
     Ok(())
+}
+
+fn find_matches(content: &str, section: &str, mut writer: impl std::io::Write) {
+    for line in content.lines() {
+        let section = format!("[{}]", section);
+        if line.contains(&section) {
+            writeln!(writer, "{} {}", line, FOUND).expect("failed to write line");
+        }
+    }
+}
+
+#[test]
+fn find_a_match() {
+    let mut result = Vec::new();
+    find_matches("[os]\nsomething here", "os", &mut result);
+    let expected = format!("[os] {}\n", FOUND).into_bytes();
+
+    assert_eq!(
+        result,
+        expected,
+        "find a match: expected [{:?}], got [{:?}]",
+        String::from_utf8_lossy(&expected),
+        String::from_utf8_lossy(&result)
+    );
 }

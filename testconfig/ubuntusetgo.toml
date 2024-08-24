@@ -1,3 +1,4 @@
 [os]
 [packages]
+apt = ["neovim", "alacritty"]
 [configs]
